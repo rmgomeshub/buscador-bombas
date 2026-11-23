@@ -4,10 +4,22 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d547a"><meta name="description" content="Buscador técnico de bombas por altura manométrica e vazão.">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icons/icon-192.png" type="image/png"><link rel="apple-touch-icon" href="./icons/icon-192.png">
-<title>Buscador de Bombas</title><link rel="stylesheet" href="./style.css"><script defer src="./config.js"></script><script defer src="./app.js"></script>
+<title>Buscador de Bombas</title><link rel="stylesheet" href="./style.css?v=3"><script defer src="./config.js"></script><script defer src="./app.js"></script>
 </head>
 <body>
-<header><div class="wrap"><div class="brand"><span class="logo">💧</span><div><h1>Buscador de Bombas</h1><p>Consulta técnica • Catálogo da empresa</p></div></div></div></header>
+<header>
+  <div class="wrap headbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">💧</span>
+      <div>
+        <h1>Buscador de Bombas</h1>
+        <p>Consulta técnica • Catálogo da empresa</p>
+      </div>
+    </div>
+    <img class="header-logo" src="./obracon-logo-branca.webp?v=3"
+         alt="Obracon Engenharia" width="1412" height="383">
+  </div>
+</header>
 <main class="wrap">
 <div class="stats"><div class="stat"><b id="total">—</b><span>Bombas cadastradas</span></div><div class="stat"><b id="pontos">—</b><span>Pontos de curva</span></div></div>
 <div id="status" role="status" class="status">Carregando catálogo…</div>
@@ -23,5 +35,12 @@
 <section class="panel" id="resultados"><h2>Resultados</h2><p id="resumo" class="sub">Preencha os campos e clique em Buscar bombas.</p><div id="lista"></div><details id="detalhes" hidden><summary>Ver todas as bombas avaliadas nesta altura</summary><div id="avaliadas"></div></details></section>
 <p class="disclaimer">Dados de curva podem ser aproximados. Conferir rotação, eficiência, NPSH, fluido e instalação antes da seleção final. O app não informa disponibilidade física.</p>
 </main>
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p>Buscador Técnico de Bombas · Obracon Engenharia</p>
+    <img class="footer-logo" src="./obracon-logo.webp?v=3"
+         alt="Obracon Engenharia" width="1412" height="386" loading="lazy">
+  </div>
+</footer>
 </body></html>
 
