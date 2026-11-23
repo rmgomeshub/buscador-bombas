@@ -1,7 +1,7 @@
 {
   "id":"./",
   "name":"Buscador Técnico de Bombas",
-  "short_name":"Bombas",
+  "short_name":"Bombas Obracon",
   "description":"Busca de bombas por altura manométrica e vazão",
   "start_url":"./",
   "scope":"./",
