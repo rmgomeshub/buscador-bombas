@@ -1,51 +1,35 @@
-// Buscador de Bombas — atualização de cache da identidade visual Obracon
-const CACHE = 'bombas-pwa-v3-obracon';
-const FILES = [
-  './', './index.html', './style.css', './app.js', './config.js',
-  './manifest.webmanifest', './catalogo-inicial.json',
-  './icons/icon-192.png', './icons/icon-512.png'
-];
-const LOGOS = ['./obracon-logo-branca.webp', './obracon-logo.webp'];
-
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await cache.addAll(FILES);
-    // Não impede a atualização do app se uma imagem ainda estiver propagando no Pages.
-    await Promise.allSettled(LOGOS.map(url => cache.add(url)));
-    await self.skipWaiting();
-  })());
+// Buscador de Bombas — versão frota 2026-11-26.
+const PREFIX='bombas-pwa-frota-'+encodeURIComponent(self.registration.scope)+'-';
+const CACHE=PREFIX+'v4';
+const CORE=['./','./index.html','./style.css?v=20261126-frota1','./app.js?v=20261126-frota1','./config.js?v=20261126-frota1','./manifest.webmanifest'];
+// Os arquivos opcionais não impedem a instalação se uma imagem ainda
+// estiver sendo publicada ou se o catálogo original usar outro formato.
+const OPTIONAL=['./catalogo-inicial.json','./icons/icon-192.png','./icons/icon-512.png','./obracon-logo-branca.webp','./obracon-logo.webp'];
+self.addEventListener('install',e=>{
+ e.waitUntil((async()=>{const c=await caches.open(CACHE);
+ await c.addAll(CORE.map(url=>new Request(url,{cache:'reload'})));
+ await Promise.allSettled(OPTIONAL.map(url=>c.add(new Request(url,{cache:'reload'}))));
+ await self.skipWaiting();})());
 });
-
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith('bombas-pwa-') && key !== CACHE)
-      .map(key => caches.delete(key)));
-    await self.clients.claim();
-  })());
+self.addEventListener('activate',e=>{
+ e.waitUntil((async()=>{const nomes=await caches.keys();
+ await Promise.all(nomes.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)));
+ await self.clients.claim();})());
 });
-
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
-  event.respondWith((async () => {
-    try {
-      // Busca a versão mais recente quando há internet.
-      const fresh = await fetch(request);
-      if (fresh.ok) {
-        const cache = await caches.open(CACHE);
-        await cache.put(request, fresh.clone());
-      }
-      return fresh;
-    } catch (error) {
-      const saved = await caches.match(request, {ignoreSearch: true});
-      if (saved) return saved;
-      if (request.mode === 'navigate') {
-        const home = await caches.match('./index.html');
-        if (home) return home;
-      }
-      return Response.error();
-    }
-  })());
+self.addEventListener('fetch',e=>{
+ const req=e.request,url=new URL(req.url);
+ if(req.method!=='GET'||url.origin!==self.location.origin||!url.href.startsWith(self.registration.scope))return;
+ e.respondWith((async()=>{
+ const c=await caches.open(CACHE);
+ try{
+  const r=await fetch(req,{cache:'no-cache'});
+  if(r.ok){try{await c.put(req,r.clone());}catch(_){}}
+  return r;
+ }catch(_){
+  const saved=await c.match(req);
+  if(saved)return saved;
+  if(req.mode==='navigate')return (await c.match('./index.html'))||Response.error();
+  return Response.error();
+ }
+ })());
 });
