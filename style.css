@@ -26,3 +26,50 @@ main.wrap { width:100%; flex:1; }
   .footer-logo { width:160px; max-width:46%; }
 }
 
+/* Frota: mantém identidade visual Obracon e melhora uso em celular */
+[hidden]{display:none!important}
+.syncbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 12px;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.syncbar strong{display:block;font-size:13px;color:var(--dark)}
+.syncbar small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.syncbar.warning{background:#fff8e9;border-color:#e8ce95}
+.syncbar.warning strong{color:#805910}
+button.secondary{width:auto;min-width:90px;max-width:none;min-height:40px;margin:0;padding:8px 12px;background:#e6f2f9;color:var(--dark);border-radius:9px;font-size:13px}
+.nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:#e4edf4;padding:5px;border-radius:12px;margin:12px 0 16px}
+.nav button{margin:0;width:100%;max-width:none;min-height:44px;color:#35536d;background:transparent;padding:7px 4px;border-radius:8px;font-size:13px;line-height:1.25}
+.nav button[aria-current="page"]{background:white;color:var(--dark);box-shadow:0 2px 7px #163b6214}
+.check{display:flex;align-items:center;gap:10px;margin:17px 0 4px;font-size:14px}
+.check input{width:19px;height:19px;flex:none;accent-color:var(--blue)}
+#avisoFiltro{margin:6px 0 0}
+.badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:750;line-height:1.2;white-space:normal}
+.status-disponivel{background:#e2f6e9;color:#176443}
+.status-locada{background:#e4effe;color:#205e9f}
+.status-indisponivel{background:#fde8e8;color:#a12222}
+.status-manutencao{background:#fff1d7;color:#8c5813}
+.status-nao_informado,.status-neutro{background:#edf0f4;color:#526377}
+.avail{padding:12px 0 0;border-top:1px solid var(--line);margin-top:13px}
+.avail>div:first-child{display:flex;flex-wrap:wrap;gap:5px}
+.unit-list{margin:10px 0 0}
+.unit-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.unit-row:last-child{border-bottom:0}
+.unit-id{font-size:14px;overflow-wrap:anywhere;font-weight:700}
+.unit-detail{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.frota-resumo{margin:16px 0 8px}
+.model-group{border:1px solid var(--line);padding:13px;border-radius:12px;margin:12px 0;background:white}
+.model-group h3{margin:0 0 5px;font-size:16px;overflow-wrap:anywhere}
+.model-group small{color:var(--muted);display:block;margin-bottom:5px}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.kpi{min-width:0;padding:13px;border-radius:12px;background:#f1f6fa}
+.kpi b{display:block;font-size:24px;line-height:1.25}
+.kpi span{font-size:13px;display:block}
+.kpi small{font-size:11px;display:block;margin-top:4px;color:var(--muted)}
+.bar-track{height:12px;background:#e6edf3;border-radius:8px;overflow:hidden;margin:6px 0 14px}
+.bar-value{height:100%;border-radius:8px}
+.bar-label{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.panel-model{padding:12px 0;border-bottom:1px solid var(--line)}
+.panel-model:last-child{border-bottom:0}
+.panel-model strong{display:block;font-size:14px;margin-bottom:7px;overflow-wrap:anywhere}
+.panel-model .badge{margin:2px 4px 2px 0}
+.empty{padding:14px;border-radius:10px;background:#f1f5f9;color:var(--muted);font-size:14px}
+.fleet-warning{margin:10px 0;font-size:12px;color:#855917}
+@media(min-width:720px){.kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.nav{max-width:660px}.syncbar{padding:14px 18px}}
+@media(max-width:370px){.nav button{font-size:11px}.syncbar{padding:10px}.syncbar button{min-width:75px;padding:8px}}
