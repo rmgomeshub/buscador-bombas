@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d547a"><meta name="description" content="Buscador técnico de bombas por altura manométrica e vazão.">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icons/icon-192.png" type="image/png"><link rel="apple-touch-icon" href="./icons/icon-192.png">
-<title>Buscador de Bombas</title><link rel="stylesheet" href="./style.css?v=20261126-frota1"><script defer src="./config.js?v=20261126-frota1"></script><script defer src="./app.js?v=20261126-frota1"></script>
+<title>Buscador de Bombas</title><link rel="stylesheet" href="./style.css?v=20261127-busca2"><script defer src="./config.js?v=20261127-busca2"></script><script defer src="./app.js?v=20261127-busca2"></script>
 </head>
 <body>
 <header>
@@ -37,20 +37,26 @@
     <div class="stat"><b id="pontos">—</b><span>Pontos de curva</span></div>
   </div>
   <section class="panel">
-    <h2>Encontrar bomba</h2><p class="sub">Informe a condição hidráulica desejada.</p>
+    <h2>Encontrar bomba</h2><p class="sub">Escolha como pesquisar e informe a vazão desejada.</p>
     <form id="formBusca"><div class="fields">
-      <div><label for="altura">Altura necessária (mca)</label><input id="altura" type="number" min="0" step="any" value="90" required inputmode="decimal"></div>
+      <div><label for="tipoAltura">Tipo de busca</label><select id="tipoAltura"><option value="exata">Altura específica</option><option value="intervalo">Intervalo de altura</option><option value="livre">Somente vazão</option></select></div>
       <div><label for="vazao">Vazão desejada (m³/h)</label><input id="vazao" type="number" min="0.01" step="any" value="500" required inputmode="decimal"></div>
+      <div id="campoAltura"><label for="altura">Altura necessária (mca)</label><input id="altura" type="number" min="0" step="any" value="90" required inputmode="decimal"></div>
+      <div id="campoAlturaMin" hidden><label for="alturaMin">Altura mínima (mca)</label><input id="alturaMin" type="number" min="0" step="any" placeholder="Ex.: 40" inputmode="decimal" disabled></div>
+      <div id="campoAlturaMax" hidden><label for="alturaMax">Altura máxima (mca)</label><input id="alturaMax" type="number" min="0" step="any" placeholder="Ex.: 90" inputmode="decimal" disabled></div>
+      
       <div><label for="modo">Critério de seleção</label><select id="modo"><option value="aproximada">Vazão aproximada</option><option value="minima">Vazão mínima</option></select></div>
       <div id="campoTolerancia"><label for="tolerancia">Tolerância ± (%)</label><input id="tolerancia" type="number" min="0" max="100" step="1" value="15" required></div>
       <div><label for="categoria">Categoria</label><select id="categoria"><option value="Todas">Todas as categorias</option></select></div>
       <div><label for="alimentacao">Alimentação</label><select id="alimentacao"><option value="Todas">Todos os tipos</option></select></div>
     </div>
+    <p class="sub busca-ajuda" id="ajudaAltura">Consulta no ponto de altura informado.</p>
+    <p id="erroBusca" class="erro-busca" role="alert" hidden></p>
     <label class="check"><input type="checkbox" id="somenteDisponiveis" disabled> Somente modelos com unidades disponíveis</label>
     <p class="sub" id="avisoFiltro">O filtro precisa de uma consulta recente à planilha.</p>
     <button id="buscar" type="submit">🔎 Buscar bombas</button></form>
   </section>
-  <section class="panel" id="resultados"><h2>Resultados</h2><p id="resumo" class="sub">Preencha os campos e clique em Buscar bombas.</p><div id="lista"></div><details id="detalhes" hidden><summary>Ver todas as bombas avaliadas nesta altura</summary><div id="avaliadas"></div></details></section>
+  <section class="panel" id="resultados"><h2>Resultados</h2><p id="resumo" class="sub">Preencha os campos e clique em Buscar bombas.</p><div id="lista"></div><details id="detalhes" hidden><summary>Ver todas as bombas avaliadas</summary><div id="avaliadas"></div></details></section>
   <p class="disclaimer">Dados de curva podem ser aproximados. Confira rotação, eficiência, NPSH, fluido e instalação antes da seleção.</p>
 </section>
 <section id="page-frota" class="page" hidden>
