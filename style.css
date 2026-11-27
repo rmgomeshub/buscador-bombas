@@ -73,3 +73,12 @@ button.secondary{width:auto;min-width:90px;max-width:none;min-height:40px;margin
 .fleet-warning{margin:10px 0;font-size:12px;color:#855917}
 @media(min-width:720px){.kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.nav{max-width:660px}.syncbar{padding:14px 18px}}
 @media(max-width:370px){.nav button{font-size:11px}.syncbar{padding:10px}.syncbar button{min-width:75px;padding:8px}}
+
+/* Busca flexível */
+.busca-ajuda{margin:12px 0 0}
+.erro-busca{color:#aa2222;background:#fff0f0;border:1px solid #f0c0c0;border-radius:9px;padding:10px 12px;font-size:13px;margin:12px 0 0}
+.card-top>div:first-child{min-width:0;overflow-wrap:anywhere}
+.flow{white-space:normal}
+.faixa-curva{padding:10px 12px;margin:12px 0 0;background:#eff7fb;border:1px solid #dcecf4;border-radius:9px;color:var(--dark);font-size:13px;overflow-wrap:anywhere}
+.faixa-curva span{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.faixa-curva b{font-size:14px}
