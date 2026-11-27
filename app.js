@@ -121,13 +121,96 @@ async function iniciar(){
  syncUI(banco?'Catálogo salvo. Consultando a planilha…':'Aguardando catálogo da planilha…');atualizarUI();atualizarRemoto();
 }
 
-function vazaoNaAltura(pontos,h){
- for(const p of pontos){if(Math.abs(p.altura-h)<1e-6)return {vazao:p.vazao,metodo:'Valor cadastrado'}}
- for(let i=0;i<pontos.length-1;i++){
-  const a=pontos[i],b=pontos[i+1];
-  if(a.altura<h&&h<b.altura&&b.coluna===a.coluna+1&&b.altura-a.altura<=2.001)
-   return {vazao:a.vazao+(b.vazao-a.vazao)*(h-a.altura)/(b.altura-a.altura),metodo:`Interpolação entre ${a.altura} e ${b.altura} mca`};
- }return null;
+// Interpola exclusivamente entre colunas vizinhas da curva (passo de até 2 mca).
+// Nunca completa lacunas nem extrapola além dos pontos cadastrados.
+const EPS_CURVA=1e-9;
+const fmtAlt=n=>Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2});
+const limitar=(n,a,b)=>Math.max(a,Math.min(b,n));
+function trechosCurva(pontos,minH,maxH){
+ const validos=(Array.isArray(pontos)?pontos:[]).filter(p=>Number.isFinite(p.altura)&&p.altura>=0&&Number.isFinite(p.vazao)&&p.vazao>=0).slice().sort((a,b)=>a.altura-b.altura);
+ const trechos=[];
+ for(const p of validos){
+  if(p.altura>=minH&&p.altura<=maxH)trechos.push({a:p.altura,b:p.altura,qa:p.vazao,qb:p.vazao,metodo:'Valor cadastrado'});
+ }
+ for(let i=0;i<validos.length-1;i++){
+  const p=validos[i],r=validos[i+1];
+  if(r.altura<=p.altura||r.coluna!==p.coluna+1||r.altura-p.altura>2.001)continue;
+  const a=Math.max(p.altura,minH),b=Math.min(r.altura,maxH);
+  if(a>b)continue;
+  const q=h=>p.vazao+(r.vazao-p.vazao)*(h-p.altura)/(r.altura-p.altura);
+  trechos.push({a,b,qa:q(a),qb:q(b),metodo:`Interpolação entre ${fmtAlt(p.altura)} e ${fmtAlt(r.altura)} mca`});
+ }
+ return trechos;
+}
+function alturaNaVazao(t,q){
+ if(t.qa===t.qb)return t.a;
+ return limitar(t.a+(t.b-t.a)*(q-t.qa)/(t.qb-t.qa),t.a,t.b);
+}
+function pontoMaisProximo(t,q){
+ const vazao=limitar(q,Math.min(t.qa,t.qb),Math.max(t.qa,t.qb));
+ return {altura:alturaNaVazao(t,vazao),vazao,metodo:t.metodo};
+}
+function faixaCompativel(t,qmin,qmax){
+ const lo=Math.max(qmin,Math.min(t.qa,t.qb)),hi=Math.min(qmax,Math.max(t.qa,t.qb));
+ if(lo>hi+EPS_CURVA)return null;
+ if(t.qa===t.qb)return {min:t.a,max:t.b};
+ const h1=alturaNaVazao(t,lo),h2=alturaNaVazao(t,hi);
+ return {min:Math.min(h1,h2),max:Math.max(h1,h2)};
+}
+function unirFaixas(faixas){
+ const unidas=[];
+ for(const f of faixas.sort((a,b)=>a.min-b.min||a.max-b.max)){
+  const ultima=unidas[unidas.length-1];
+  if(ultima&&f.min<=ultima.max+EPS_CURVA)ultima.max=Math.max(ultima.max,f.max);
+  else unidas.push({...f});
+ }
+ return unidas;
+}
+function avaliarCurva(pontos,minH,maxH,q,tol,modo){
+ const minQ=modo==='minima'?q:Math.max(0,q*(1-tol/100));
+ const maxQ=modo==='minima'?Infinity:q*(1+tol/100);
+ let melhor=null,compativel=null;
+ const faixas=[];
+ function escolher(atual,p){
+  if(!atual)return p;
+  const d=Math.abs(p.vazao-q)-Math.abs(atual.vazao-q);
+  // Em empate, prefere um ponto efetivamente cadastrado e depois menor altura.
+  if(d<-EPS_CURVA)return p;
+  if(Math.abs(d)>EPS_CURVA)return atual;
+  if(p.metodo==='Valor cadastrado'&&atual.metodo!=='Valor cadastrado')return p;
+  if(atual.metodo==='Valor cadastrado'&&p.metodo!=='Valor cadastrado')return atual;
+  return p.altura<atual.altura?p:atual;
+ }
+ for(const t of trechosCurva(pontos,minH,maxH)){
+  const p=pontoMaisProximo(t,q);
+  melhor=escolher(melhor,p);
+  const f=faixaCompativel(t,minQ,maxQ);
+  if(f){
+   faixas.push(f);
+   // O ponto mais próximo do alvo pertence à faixa se ela existe.
+   // Mantém a escolha dentro do critério mínimo/aproximado.
+   if(p.vazao>=minQ-EPS_CURVA&&p.vazao<=maxQ+EPS_CURVA)compativel=escolher(compativel,p);
+  }
+ }
+ if(!melhor)return null;
+ const p=compativel||melhor;
+ return {...p,atende:!!compativel,faixas:unirFaixas(faixas),diferencaPct:(p.vazao-q)/q*100};
+}
+function textoFaixas(faixas){
+ return faixas.map(f=>Math.abs(f.max-f.min)<=EPS_CURVA?fmtAlt(f.min)+' mca':fmtAlt(f.min)+' a '+fmtAlt(f.max)+' mca').join(' · ');
+}
+function atualizarTipoAltura(){
+ const tipo=$('tipoAltura').value;
+ for(const [campo,input,ativo] of [['campoAltura','altura',tipo==='exata'],['campoAlturaMin','alturaMin',tipo==='intervalo'],['campoAlturaMax','alturaMax',tipo==='intervalo']]){
+  $(campo).hidden=!ativo;$(input).disabled=!ativo;$(input).required=ativo;
+ }
+ $('ajudaAltura').textContent=tipo==='exata'?'Consulta no ponto de altura informado.':tipo==='intervalo'?'Busca os pontos de operação compatíveis dentro do intervalo indicado.':'Busca em toda a curva cadastrada e mostra em quais alturas a bomba atende.';
+ $('erroBusca').hidden=true;
+}
+function erroPesquisa(texto){
+ $('erroBusca').textContent=texto;$('erroBusca').hidden=false;
+ $('resumo').textContent='Corrija os campos para pesquisar novamente.';
+ $('lista').innerHTML='';$('avaliadas').innerHTML='';$('detalhes').hidden=true;
 }
 function badge(s,t){s=statusValido(s);return `<span class="badge status-${s}">${esc(t??STATUS[s].label)}</span>`;}
 function resumoBadges(c){return keys.filter(k=>c[k]>0).map(k=>badge(k,`${c[k]} ${STATUS[k].plural.toLowerCase()}`)).join('');}
@@ -144,14 +227,28 @@ function disponibilidadeCard(modelo){
  <details><summary>Ver ${lista.length} unidade(s) por patrimônio</summary><div class="unit-list">${lista.map(unidadeRow).join('')}</div></details></div>`;
 }
 function card(r){
- return `<article class="card"><div class="card-top"><div><h3>${esc(r.modelo)}</h3><p class="note">Linha técnica ${esc(r.linha)}${r.serie?' · Série '+esc(r.serie):''}</p></div><div class="flow">${esc(fmt(r.vazao))}<small>m³/h nesta altura</small></div></div>
+ const livre=r.tipoAltura!=='exata';
+ const faixa=livre&&r.atende&&r.faixas.length?'<div class="faixa-curva"><span>Altura(s) compatível(is) · aproximadas pela curva</span><b>'+esc(textoFaixas(r.faixas))+'</b></div>':'';
+ return `<article class="card"><div class="card-top"><div><h3>${esc(r.modelo)}</h3><p class="note">Linha técnica ${esc(r.linha)}${r.serie?' · Série '+esc(r.serie):''}</p></div><div class="flow">${esc(fmt(r.vazao))}<small>m³/h a ${esc(fmtAlt(r.altura))} mca</small></div></div>
  <div class="specs"><div><span>Diferença</span><b>${r.diferencaPct>0?'+':''}${esc(fmt(r.diferencaPct))}%</b></div><div><span>Categoria</span><b>${esc(r.categoria||'—')}</b></div><div><span>Alimentação</span><b>${esc(r.alimentacao||'—')}</b></div><div><span>Potência</span><b>${esc(fmt(r.potenciaCV))} CV / ${esc(fmt(r.potenciaKW))} kW</b></div></div>
- <p class="note">${esc(r.metodo)}</p>${disponibilidadeCard(r.modelo)}</article>`;
+ ${faixa}<p class="note">${livre?'Ponto mais próximo da vazão solicitada · ':''}${esc(r.metodo)}${livre&&!r.atende?' · Não atende ao critério.':''}</p>${disponibilidadeCard(r.modelo)}</article>`;
 }
 function buscar(e,scroll=true){
  if(e)e.preventDefault();if(!banco){$('resumo').textContent='Catálogo indisponível. Atualize os dados.';return;}
- const h=Number($('altura').value),q=Number($('vazao').value),tol=Number($('tolerancia').value),modo=$('modo').value;
- if($('altura').value===''||$('vazao').value===''||!Number.isFinite(h)||h<0||!Number.isFinite(q)||q<=0||!Number.isFinite(tol)||tol<0||tol>100){$('resumo').textContent='Verifique altura, vazão e tolerância.';return;}
+ const tipo=$('tipoAltura').value,q=Number($('vazao').value),modo=$('modo').value;
+ const tol=modo==='minima'?0:Number($('tolerancia').value);
+ const num=id=>$(id).value.trim()===''?NaN:Number($(id).value);
+ let minH=0,maxH=Infinity;
+ if(tipo==='exata'){minH=maxH=num('altura');}
+ else if(tipo==='intervalo'){minH=num('alturaMin');maxH=num('alturaMax');}
+ if($('vazao').value.trim()===''||!Number.isFinite(q)||q<=0||(modo!=='minima'&&($('tolerancia').value.trim()===''||!Number.isFinite(tol)||tol<0||tol>100))){
+  erroPesquisa('Informe uma vazão positiva e uma tolerância válida (0 a 100%).');return;
+ }
+ if(tipo!=='livre'&&(!Number.isFinite(minH)||!Number.isFinite(maxH)||minH<0||maxH<0)){
+  erroPesquisa('Informe altura(s) válida(s), igual(is) ou superior(es) a zero.');return;
+ }
+ if(minH>maxH){erroPesquisa('A altura mínima não pode ser maior que a máxima.');return;}
+ $('erroBusca').hidden=true;
  pesquisou=true;let filtradas=0;const avaliaveis=[];
  const soDisp=$('somenteDisponiveis').checked&&frotaRecente();
  for(const b of banco.bombas){
@@ -159,15 +256,15 @@ function buscar(e,scroll=true){
   if($('alimentacao').value!=='Todas'&&b.alimentacao!==$('alimentacao').value)continue;
   if(soDisp&&!listaModelo(b.modelo).some(u=>u.status==='disponivel'))continue;
   filtradas++;
-  const p=vazaoNaAltura(b.pontos,h);if(!p)continue;const dif=(p.vazao-q)/q*100;
-  const atende=modo==='minima'?p.vazao+1e-9>=q:Math.abs(dif)<=tol+1e-9;
-  avaliaveis.push({...b,vazao:Math.round(p.vazao*10)/10,diferencaPct:Math.round(dif*10)/10,metodo:p.metodo,atende});
+  const p=avaliarCurva(b.pontos,minH,maxH,q,tol,modo);
+  if(p)avaliaveis.push({...b,...p,tipoAltura:tipo});
  }
  avaliaveis.sort((a,b)=>Math.abs(a.diferencaPct)-Math.abs(b.diferencaPct)||a.modelo.localeCompare(b.modelo,'pt-BR'));
  const encontrados=avaliaveis.filter(b=>b.atende);
- $('resumo').textContent=`${encontrados.length} modelo(s) compatível(is). ${filtradas} passaram nos filtros; ${avaliaveis.length} têm dados válidos nesta altura.`+(soDisp?' Somente modelos com unidade disponível.':'');
+ const escopo=tipo==='livre'?'em toda a curva cadastrada':tipo==='intervalo'?'no intervalo de '+fmtAlt(minH)+' a '+fmtAlt(maxH)+' mca':'a '+fmtAlt(minH)+' mca';
+ $('resumo').textContent=`${encontrados.length} modelo(s) compatível(is) com ${fmt(q)} m³/h ${escopo}. ${filtradas} passaram nos filtros; ${avaliaveis.length} têm dados válidos na busca.`+(soDisp?' Somente modelos com unidade disponível.':'');
  $('lista').innerHTML=encontrados.length?encontrados.map(card).join(''):'<p class="empty">Nenhuma bomba comprovou atendimento com os filtros escolhidos. Dados ausentes não significam vazão zero.</p>';
- $('avaliadas').innerHTML=avaliaveis.length?avaliaveis.map(card).join(''):'<p class="empty">Nenhuma bomba pôde ser avaliada nesta altura.</p>';
+ $('avaliadas').innerHTML=avaliaveis.length?avaliaveis.map(card).join(''):'<p class="empty">Nenhuma bomba pôde ser avaliada nesta condição de busca.</p>';
  $('detalhes').hidden=false;if(scroll)$('resultados').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderFrota(){
@@ -202,7 +299,9 @@ function pagina(p){
 }
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>pagina(b.dataset.page)));
 $('formBusca').addEventListener('submit',buscar);
-$('modo').addEventListener('change',()=>{$('campoTolerancia').hidden=$('modo').value==='minima';$('tolerancia').required=$('modo').value!=='minima';});
+$('tipoAltura').addEventListener('change',atualizarTipoAltura);
+atualizarTipoAltura();
+$('modo').addEventListener('change',()=>{$('campoTolerancia').hidden=$('modo').value==='minima';$('tolerancia').required=$('modo').value!=='minima';$('tolerancia').disabled=$('modo').value==='minima';});
 $('sincronizar').addEventListener('click',atualizarRemoto);
 $('consultaFrota').addEventListener('input',renderFrota);
 $('filtroModelo').addEventListener('change',renderFrota);
@@ -217,4 +316,3 @@ if('serviceWorker' in navigator){
  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));
 }
 iniciar();
-
