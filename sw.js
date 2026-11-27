@@ -1,7 +1,7 @@
-// Buscador de Bombas — versão frota 2026-11-26.
+// Buscador de Bombas — versão busca flexível 2026-11-27.
 const PREFIX='bombas-pwa-frota-'+encodeURIComponent(self.registration.scope)+'-';
-const CACHE=PREFIX+'v4';
-const CORE=['./','./index.html','./style.css?v=20261126-frota1','./app.js?v=20261126-frota1','./config.js?v=20261126-frota1','./manifest.webmanifest'];
+const CACHE=PREFIX+'v5';
+const CORE=['./','./index.html','./style.css?v=20261127-busca2','./app.js?v=20261127-busca2','./config.js?v=20261127-busca2','./manifest.webmanifest'];
 // Os arquivos opcionais não impedem a instalação se uma imagem ainda
 // estiver sendo publicada ou se o catálogo original usar outro formato.
 const OPTIONAL=['./catalogo-inicial.json','./icons/icon-192.png','./icons/icon-512.png','./obracon-logo-branca.webp','./obracon-logo.webp'];
